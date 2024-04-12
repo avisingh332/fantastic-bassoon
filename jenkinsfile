@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+    
+    tools {
+    jdk 'JDK17'
+  }
+    environment {
+        sonarScanner = tool 'sonar-scanner' 
+        DOTNET_CLI_HOME = "/tmp/DOTNET_CLI_HOME"
+        IMAGE_NAME = 'avisingh332/dotnettestimage'
+        IMAGE_TAG = 'latest'
+    }
+
+    stages {
+        //  stage('Install Docker') {
+        //     steps {
+        //         script {
+        //             sh 'curl -fsSL https://get.docker.com -o get-docker.sh'
+        //             sh 'sh get-docker.sh'
+        //         }
+        //     }
+        // }
+        stage('Git SCM') {
+            steps {
+                
+                echo 'Hello World'
+                git branch: 'main', url: 'https://github.com/avisingh332/fantastic-bassoon.git'
+            }
+        }
+        stage('SonarQube Scan'){
+            steps{
+                withSonarQubeEnv(installationName: 'sq-1'){
+                sh """${sonarScanner}/bin/sonar-scanner \
+                -Dsonar.projectKey=DotnetCoreAutomatedPipeline \
+                -Dsonar.projectName=DotnetCoreAutomatedPipeline"""
+            }
+            }
+        }
+        stage('Build') {
+            agent {
+                docker {
+                     image 'mcr.microsoft.com/dotnet/sdk:6.0'
+                     args '--user root' 
+                     reuseNode true
+                }
+            }
+            steps {
+                sh 'dotnet build "$WORKSPACE/Testing App.sln" --configuration Release'
+                sh 'echo "Into the Build Stage"'
+            }
+        }
+        stage('Docker Build'){
+            steps{
+                script{
+                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}",'"./Testing App"')
+                }
+            }
+        }
+        stage('Docker Push'){
+            steps{
+                script{
+                    docker.withRegistry('','DockerHubAvinash'){
+                         docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
+                    }
+                }
+            }
+        }
+        stage('Run Container'){
+            steps{
+                sh 'docker rm -f mvcApp || true'
+                sh 'docker run -d --name mvcApp -p 8000:80  ${IMAGE_NAME}:${IMAGE_TAG}'
+            }
+        }
+
+
+    }
+}
