@@ -58,7 +58,7 @@ pipeline {
                 }
             }
             steps{
-                sh 'dotnet test "${WORKSPACE}/Testing App.sln" --logger "trx; LogFileName = ./test.trx"'
+                sh 'dotnet test "$WORKSPACE/Testing App.sln" --logger "trx;LogFileName=./test.trx"'
             }
         }
         stage('Docker Build'){
