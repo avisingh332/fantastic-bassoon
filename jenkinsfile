@@ -49,6 +49,18 @@ pipeline {
                 sh 'echo "Into the Build Stage"'
             }
         }
+        stage('Test'){
+            agent {
+                docker {
+                     image 'mcr.microsoft.com/dotnet/sdk:6.0'
+                     args '--user root' 
+                     reuseNode true
+                }
+            }
+            steps{
+                sh 'dotnet test "${WORKSPACE}/Testing App.sln" --logger "trx; LogFileName = ./test.trx"'
+            }
+        }
         stage('Docker Build'){
             steps{
                 script{
