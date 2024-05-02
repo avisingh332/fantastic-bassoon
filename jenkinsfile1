@@ -4,6 +4,9 @@ pipeline {
     tools {
     jdk 'JDK17'
   }
+     options {
+        skipDefaultCheckout(true)
+    }
     environment {
         sonarScanner = tool 'sonar-scanner' 
         DOTNET_CLI_HOME = "/tmp/DOTNET_CLI_HOME"
